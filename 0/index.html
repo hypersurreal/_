@@ -1,166 +1,45 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>∅⊙☽</title>
-    <style>
-        body {margin:0}
-        canvas {display:block}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
+body {
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 99vh;
+}
+.container {width: 600px; margin:0 auto}
+h1 {text-align: center}
+iframe {width:100%}
+blockquote {border-left:3px solid black; padding-left:15px; text-align: justify}
+#next {text-align: center}
+a:link {text-decoration: none; color:black}
+a:hover {text-decoration: underline}
+</style>
+<script>
+MathJax = {
+  tex: {
+    displayMath: [['$$', '$$']],
+    inlineMath: [['$', '$']]
+  }
+};
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
 </head>
 <body>
-    <script src="https://unpkg.com/three@0.136.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.136.0/examples/js/controls/OrbitControls.js"></script>
-    <script>
-    let camera, scene, renderer, controls;
-
-    init();
-    animate();
-
-    function createTextLabel(text, position) {
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      const fontSize = 64; // Set font size big for clarity
-      context.font = `${fontSize}px Arial`;
-
-      // Get the width of the text
-      const metrics = context.measureText(text);
-      const textWidth = metrics.width;
-
-      // Set canvas size dynamically based on text size
-      canvas.width = textWidth;
-      canvas.height = fontSize;
-
-      // You need to set font again here after setting width and height
-      // because canvas is reset when its dimensions are set
-      context.font = `${fontSize}px Arial`;
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillStyle = 'black';
-
-      // Fill text in the middle of the canvas
-      context.fillText(text, canvas.width / 2, canvas.height / 2);
-
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.needsUpdate = true;
-
-      const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-      const sprite = new THREE.Sprite(spriteMaterial);
-
-      // Adjust the scale of the sprite here if needed
-      const spriteScale = 0.005; // Change this value to scale the size of your text label
-      sprite.scale.set(spriteScale * canvas.width, spriteScale * canvas.height, 1);
-
-      sprite.position.copy(position);
-      sprite.position.z = -.001; // Slightly in front of the point to avoid z-fighting
-      return sprite;
-    }
-
-    function init() {
-        scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 3;
-
-        renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setClearColor(0xffffff, 1);
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-        const sideLength = 2;
-        const triangleHeight = sideLength * Math.sqrt(3) / 2;
-        const vertices = [
-            new THREE.Vector3(-sideLength / 2, -triangleHeight / 3, 0),
-            new THREE.Vector3(sideLength / 2, -triangleHeight / 3, 0),
-            new THREE.Vector3(0, 2 * triangleHeight / 3, 0),
-        ];
-
-        const midpoints = [
-            new THREE.Vector3().lerpVectors(vertices[0], vertices[1], 0.5),
-            new THREE.Vector3().lerpVectors(vertices[1], vertices[2], 0.5),
-            new THREE.Vector3().lerpVectors(vertices[2], vertices[0], 0.5),
-        ];
-
-        const centroid = new THREE.Vector3().add(vertices[0]).add(vertices[1]).add(vertices[2]).divideScalar(3);
-
-        const pointsMaterial = new THREE.PointsMaterial({ color: 0x000000, size: 0.0025 });
-        const pointsGeometry = new THREE.BufferGeometry().setFromPoints([...vertices, ...midpoints, centroid]);
-        const points = new THREE.Points(pointsGeometry, pointsMaterial);
-        scene.add(points);
-
-        const linesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
-        const linesGeometry = new THREE.BufferGeometry();
-        const linePositions = [];
-
-        vertices.forEach((vertex, i) => {
-            linePositions.push(vertex.x, vertex.y, vertex.z);
-            linePositions.push(vertices[(i + 1) % vertices.length].x, vertices[(i + 1) % vertices.length].y, vertices[(i + 1) % vertices.length].z);
-        });
-
-        vertices.forEach((vertex, i) => {
-            linePositions.push(vertex.x, vertex.y, vertex.z);
-            linePositions.push(midpoints[(i + 1) % midpoints.length].x, midpoints[(i + 1) % midpoints.length].y, midpoints[(i + 1) % midpoints.length].z);
-        });
-
-        linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
-        const lines = new THREE.LineSegments(linesGeometry, linesMaterial);
-        scene.add(lines);
-
-        const ambientLight = new THREE.AmbientLight(0x404040);
-        scene.add(ambientLight);
-
-        const light = new THREE.DirectionalLight(0xffffff, 0.5);
-        light.position.set(1, 1, 1);
-        scene.add(light);
-
-        // Create and add labels
-        const labels = ['↓', '↑', '⁕', '⊙', '+', '-', '0']; // Replace these labels with your own if needed
-        const labelPositions = [...vertices, ...midpoints, centroid];
-
-        labelPositions.forEach((position, i) => {
-          const label = createTextLabel(labels[i], position);
-          scene.add(label);
-        });
-        // Function to create a circle on a given axis
-        function createAxisCircle(radius, position, rotationAxis, angle) {
-            const geometry = new THREE.CircleGeometry(radius, 64);
-            const material = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, wireframe: true });
-            const circle = new THREE.Mesh(geometry, material);
-
-            circle.position.copy(position);
-
-            if (rotationAxis === 'x') {
-                circle.rotation.x = angle;
-            } else if (rotationAxis === 'y') {
-                circle.rotation.y = angle;
-            } else if (rotationAxis === 'z') {
-                circle.rotation.z = angle;
-            }
-
-            return circle;
-        }
-
-        // Radius of the circles
-        const circleRadius = sideLength / Math.sqrt(12);
-
-        // Create circles on each axis
-        const circleX = createAxisCircle(circleRadius, new THREE.Vector3(0, 0, 0), 'x', Math.PI / 2);
-        const circleY = createAxisCircle(circleRadius, new THREE.Vector3(0, 0, 0), 'y', Math.PI / 2);
-        const circleZ = createAxisCircle(circleRadius, new THREE.Vector3(0, 0, 0), 'z', 0);
-
-        // Add the circles to the scene
-        scene.add(circleX);
-        scene.add(circleY);
-        scene.add(circleZ);
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-
-    </script>
+  <div>
+  <h1><a href="/_/∅">0</a></h1>
+  <h1 id="next"><a href="/_/*">*</a></h1>
+</div>
 </body>
 </html>
